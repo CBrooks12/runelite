@@ -124,6 +124,10 @@ public class ChatArchiverPanel extends PluginPanel {
                 if (count++ > MAX_MESSAGE_ITEMS) {
                     break;
                 }
+                // safety check if line is null
+                if(message == null){
+                    continue;
+                }
                 addItemToPanel(message);
             }
             revalidate();

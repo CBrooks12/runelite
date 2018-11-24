@@ -119,9 +119,13 @@ public class ChatArchiverPlugin extends Plugin {
                 System.out.println(playerName + " not part of list. Adding...");
                 playerList.add(playerName);
                 chatArchiverPanel.addPlayer(playerName);
+                fileIO.setNameFileWriter(playerName);
+                fileIO.addMessage(outMessage, true);
+            }else{
+                fileIO.setNameFileWriter(playerName);
+                fileIO.addMessage(outMessage, false);
             }
-            fileIO.setNameFileWriter(playerName);
-            fileIO.addMessage(outMessage);
+
 
             if(chatArchiverPanel.getCurrentPlayer().equals(playerName)){
                 chatArchiverPanel.addMessage(createdMessage);

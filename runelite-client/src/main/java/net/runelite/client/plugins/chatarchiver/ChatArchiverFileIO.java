@@ -58,13 +58,19 @@ public class ChatArchiverFileIO {
         }
     }
 
-    public void addMessage(String outMessage){
+    public void addMessage(String outMessage, boolean isFirstMessage){
         System.out.println("Writing message: "+ outMessage);
         if(fw == null || bw == null){
             return;
         }
         try {
-            bw.write(System.lineSeparator() + outMessage);
+            // TODO: rewrite for cleaner practice
+            if(isFirstMessage){
+                bw.write(outMessage);
+            }
+            else {
+                bw.write(System.lineSeparator() + outMessage);
+            }
             bw.flush(); //TODO: check for performance issues
         } catch(IOException e) {
             e.printStackTrace();
