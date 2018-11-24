@@ -8,3 +8,4 @@ project.properties
 .project
 .settings/
 .classpath
+!runelite-client/src/main/resources/net/runelite/client/chatarchiver/players/.gitkeep

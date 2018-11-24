@@ -1,0 +1,7 @@
+﻿{"type":"PRIVATE_MESSAGE_SENT","message":"Boop","name":"Mr Goldmill","timestamp":1542760786137}
+{"type":"PRIVATE_MESSAGE_SENT","message":"Boop","name":"Mr Goldmill","timestamp":1542789270194}
+{"type":"PRIVATE_MESSAGE_SENT","message":"Will you update?","name":"Mr Goldmill","timestamp":1542834250121}
+{"type":"PRIVATE_MESSAGE_SENT","message":"Update please","name":"Mr Goldmill","timestamp":1542834364368}
+{"type":"PRIVATE_MESSAGE_RECEIVED","message":"Boop","name":"Mr Goldmill","timestamp":1542834446708}
+{"type":"PRIVATE_MESSAGE_RECEIVED","message":"Hello","name":"Mr Goldmill","timestamp":1542834485748}
+{"type":"PRIVATE_MESSAGE_SENT","message":"Hello back","name":"Mr Goldmill","timestamp":1542834497168}
