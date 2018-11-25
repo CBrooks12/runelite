@@ -1,5 +1,6 @@
 package net.runelite.client.plugins.chatarchiver;
 
+import net.runelite.api.Client;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.ui.ColorScheme;
 import net.runelite.client.ui.FontManager;
@@ -24,6 +25,8 @@ public class ChatArchiverPanel extends PluginPanel {
     private static final Color RECIEVED_BACKGROUND = new Color(36, 75, 19);
     private static final Color RECIEVED_MOD_BACKGROUND = new Color(50, 30, 19);
 
+    private final GridBagConstraints constraints = new GridBagConstraints();
+
     private ChatArchiverPlugin plugin;
 
     private ScheduledExecutorService executorService;
@@ -41,10 +44,13 @@ public class ChatArchiverPanel extends PluginPanel {
 
     private ClientThread clientThread;
 
+    private JScrollPane resultsWrapper;
+
     ChatArchiverPanel(ChatArchiverPlugin plugin,
                       String[] boxNames,
                       ChatArchiverFileIO fileIO,
                       ClientThread clientThread,
+                      Client client,
                       ScheduledExecutorService executorService)
     {
         super(true);
@@ -53,9 +59,14 @@ public class ChatArchiverPanel extends PluginPanel {
         this.clientThread = clientThread;
         this.executorService = executorService;
 
-        setBorder(null);
         setLayout(new BorderLayout());
         setBackground(ColorScheme.DARK_GRAY_COLOR);
+
+        constraints.fill = GridBagConstraints.BOTH;
+        constraints.weightx = 1;
+        constraints.weighty = 0;
+        constraints.gridx = 0;
+        constraints.gridy = 0;
 
         /*  The main container, this holds the search bar and the center panel */
         JPanel container = new JPanel();
@@ -66,20 +77,35 @@ public class ChatArchiverPanel extends PluginPanel {
         //dynamically sorts names as they get inserted
         model = new SortedComboBoxModel(boxNames);
         comboBox = new JComboBox(model);
+
+        comboBox.setPreferredSize(new Dimension(100, 30));
+        comboBox.setBackground(ColorScheme.DARKER_GRAY_COLOR);
         comboBox.addActionListener(e -> executorService.execute(() -> loadMessagesOnNameChange()));
 
-        messagesBox = new JPanel();
-        messagesBox.setLayout(new GridLayout(0, 1, 5, 5));
+        messagesBox = new JPanel(new GridBagLayout());
         messagesBox.setBackground(ColorScheme.DARK_GRAY_COLOR);
+
+        /* This panel wraps the results panel and guarantees the scrolling behaviour */
+        JPanel wrapper = new JPanel(new BorderLayout());
+        wrapper.setBackground(ColorScheme.DARK_GRAY_COLOR);
+        wrapper.add(messagesBox, BorderLayout.NORTH);
+
+        /*  The results wrapper, this scrolling panel wraps the results container */
+        resultsWrapper = new JScrollPane(wrapper);
+        resultsWrapper.setBackground(ColorScheme.DARK_GRAY_COLOR);
+        resultsWrapper.getVerticalScrollBar().setPreferredSize(new Dimension(12, 0));
+        resultsWrapper.getVerticalScrollBar().setBorder(new EmptyBorder(0, 5, 0, 0));
+        resultsWrapper.setMaximumSize(new Dimension(100, 600));
+        resultsWrapper.setPreferredSize(new Dimension(100, 600));
 
         currentPlayerSelection = (String) comboBox.getSelectedItem();
 
         container.add(comboBox, BorderLayout.NORTH);
-        container.add(messagesBox, BorderLayout.CENTER);
+        container.add(resultsWrapper, BorderLayout.CENTER);
 
         add(container, BorderLayout.CENTER);
 
-        loadPlayerChat((String)comboBox.getSelectedItem());
+        clientThread.invokeLater(()->loadPlayerChat((String)comboBox.getSelectedItem()));
     }
 
     private void loadMessagesOnNameChange(){
@@ -109,32 +135,51 @@ public class ChatArchiverPanel extends PluginPanel {
     public void addMessage(ArchivedMessage message){
         clientThread.invokeLater(() -> SwingUtilities.invokeLater(()->{
             addItemToPanel(message);
-            revalidate();
+
+            messagesBox.updateUI();
         }));
+    }
+
+
+    private void addItemToPanel(ArchivedMessage message){
+        JPanel panel = getPanelElement(message);
+        if(messagesBox.getComponentCount() > 0){
+            JPanel marginWrapper = new JPanel(new BorderLayout());
+            marginWrapper.setBackground(ColorScheme.DARK_GRAY_COLOR);
+            marginWrapper.setBorder(new EmptyBorder(5, 0, 0, 0));
+            marginWrapper.add(panel, BorderLayout.NORTH);
+            messagesBox.add(marginWrapper, constraints);
+        }
+        else{
+            messagesBox.add(panel, constraints);
+        }
+        constraints.gridy++;
     }
 
     private void loadPlayerChat(String playerName){
         ArrayList<ArchivedMessage> messageList = this.fileIO.getMessages(playerName);
-        if(messageList==null){
-            return;
-        }
         SwingUtilities.invokeLater(() -> {
-            int count = 0;
-            for (ArchivedMessage message : messageList) {
-                if (count++ > MAX_MESSAGE_ITEMS) {
-                    break;
+            messagesBox.removeAll();
+            if(messageList != null) {
+
+                int count = 0;
+                for (ArchivedMessage message : messageList) {
+                    if (count > MAX_MESSAGE_ITEMS) {
+                        break;
+                    }
+                    // safety check if line is null
+                    if (message == null) {
+                        continue;
+                    }
+                    addItemToPanel(message);
                 }
-                // safety check if line is null
-                if(message == null){
-                    continue;
-                }
-                addItemToPanel(message);
+                resultsWrapper.getVerticalScrollBar().setValue(resultsWrapper.getVerticalScrollBar().getMaximum());
             }
-            revalidate();
+            messagesBox.updateUI();
         });
     }
 
-    private void addItemToPanel(ArchivedMessage item)
+    private JPanel getPanelElement(ArchivedMessage item)
     {
 
         // TODO: margin constraint fix needed possibly?
@@ -199,13 +244,8 @@ public class ChatArchiverPanel extends PluginPanel {
                 new Dimension(0, Short.MAX_VALUE)));
 
         avatarAndRight.add(upAndContent, BorderLayout.CENTER);
+        return avatarAndRight;
 
-        //Color backgroundColor = avatarAndRight.getBackground();
-        //Color hoverColor = backgroundColor.brighter().brighter();
-        //Color pressedColor = hoverColor.brighter();
-
-        messagesBox.add(avatarAndRight);
-        messagesBox.repaint();
     }
 
     private String lineBreakText(String text, Font font)
@@ -219,14 +259,15 @@ public class ChatArchiverPanel extends PluginPanel {
         int pos = 0;
         String[] words = text.split(" ");
         String line = "";
-
+        double widthprev = 0;
         while (pos < words.length)
         {
             String newLine = pos > 0 ? line + " " + words[pos] : words[pos];
             double width = font.getStringBounds(newLine, fontRenderContext).getWidth();
 
-            if (width >= CONTENT_WIDTH)
+            if (width >= CONTENT_WIDTH && widthprev != width)
             {
+                widthprev = width;
                 newText.append(line);
                 newText.append("<br>");
                 line = "";

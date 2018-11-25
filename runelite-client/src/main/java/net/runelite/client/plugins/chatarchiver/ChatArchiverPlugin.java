@@ -5,6 +5,7 @@ import com.google.common.eventbus.Subscribe;
 import com.google.gson.Gson;
 import com.google.inject.Provides;
 import net.runelite.api.ChatMessageType;
+import net.runelite.api.Client;
 import net.runelite.api.events.SetMessage;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.config.ConfigManager;
@@ -41,6 +42,9 @@ public class ChatArchiverPlugin extends Plugin {
     private ClientThread clientThread;
 
     @Inject
+    private Client client;
+
+    @Inject
     private ScheduledExecutorService executorService;
 
     @Inject
@@ -74,6 +78,7 @@ public class ChatArchiverPlugin extends Plugin {
                 boxNames.toArray(new String[boxNames.size()]),
                 fileIO,
                 clientThread,
+                client,
                 executorService);
 
         final BufferedImage icon = ImageUtil.getResourceStreamFromClass(getClass(), "icon.png");
