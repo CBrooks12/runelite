@@ -75,6 +75,7 @@ public class ChatArchiverPanel extends PluginPanel {
         container.setBackground(ColorScheme.DARK_GRAY_COLOR);
 
         //dynamically sorts names as they get inserted
+        if (boxNames.length == 0) boxNames = new String[]{""};
         model = new SortedComboBoxModel(boxNames);
         comboBox = new JComboBox(model);
 

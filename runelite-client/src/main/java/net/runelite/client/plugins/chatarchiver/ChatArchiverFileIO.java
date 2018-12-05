@@ -6,24 +6,27 @@ import java.io.*;
 import java.util.ArrayList;
 import java.util.HashSet;
 
+import static net.runelite.client.RuneLite.CHATLOG_DIR;
+
 public class ChatArchiverFileIO {
-    private static final String path = "./runelite-client/src/main/resources/net/runelite/client/plugins/chatarchiver/players/";
 
     private static Gson gson;
     private FileWriter fw;
     private BufferedWriter bw;
     private String player;
     private ArrayList<ArchivedMessage> playerMessages;
+    private static final File chatlogDir = CHATLOG_DIR;
 
     ChatArchiverFileIO() {
+        chatlogDir.mkdirs();
         this.gson = new Gson();
     }
+
     public HashSet<String> initGetPlayerNames()
     {
         HashSet<String> playerNames = new HashSet<String>();
-        File folder = new File(path);
         try {
-            for (File file : folder.listFiles()) {
+            for (File file : chatlogDir.listFiles()) {
                 if (file.isFile() && file.getAbsolutePath().toLowerCase().endsWith(".txt")) {
                     String playerName = file.getName().substring(0, file.getName().lastIndexOf('.'));
                     playerNames.add(playerName);
@@ -48,7 +51,7 @@ public class ChatArchiverFileIO {
             System.out.println("setting new writer: " + playerName);
             try
             {
-                fw = new FileWriter(path + playerName + ".txt",true);
+                fw = new FileWriter(new File(chatlogDir, playerName + ".txt"), true);
                 bw = new BufferedWriter(fw);
 
             }catch(IOException e)
@@ -82,7 +85,7 @@ public class ChatArchiverFileIO {
         FileReader fr = null;
         BufferedReader br = null;
         try {
-            fr = new FileReader(path + playerSelected + ".txt");
+            fr = new FileReader(new File(chatlogDir, playerSelected + ".txt"));
             br = new BufferedReader(fr);
 
             String curLine;
